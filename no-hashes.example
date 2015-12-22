@@ -1,0 +1,98 @@
+; keep simple things simple
+<brand-name "Firefox">
+
+; strings with variants are macros with optional arguments
+; macros are public entities
+<brand-name case => (cond 
+    (eq? case :accusative) "Firefoksie"
+    :else "Firefox")>
+
+; no attributes, just conventions not enforced by syntax and used by bindings
+; triple-quotes for multiline strings
+; HTML is only recognized in triple-quoted strings (not sure about this)
+<brand-name.title """
+  Mozilla <em>Firefox</em>
+""">
+
+; accessors use the same syntax as definitions
+; variant access with :
+<about-brand-name "O { (brand-name :accusative) }">
+
+; trait access with ^
+<crashed (cond 
+    (eq? brand-name^gender :feminine) "{ brand-name } uległa awarii"}
+    :else "{ brand-name } uległ awarii")
+>
+
+; built-in macros are always namespaced: cldr/*, intl/*, os/* etc.
+<you-received 
+  ; @param $new-messages Number of new messages
+  ; @param $gender The gender of the recepient
+  (cond 
+    (eq? (cldr/plural $new-messages) :one) (cond
+        (eq? $gender :feminine) "Otrzymałaś 1 nową wiadomość."
+        :else "Otrzymałeś 1 nową wiadomość."
+        )
+    (eq? (cldr/plural $new-messages) :few) (cond 
+        (eq? $gender :feminine) "Otrzymałaś { $new-messages } nowe wiadomości."
+        :else "Otrzymałeś { $new-messages } nowe wiadomości."
+        )
+    ; many
+    :else (cond 
+        (eq? $gender :feminine) "Otrzymałaś { $new-messages } nowych wiadomości."
+        :else "Otrzymałeś { $new-messages } nowych wiadomości."
+        )
+  )
+>
+
+; _-./ are allowed in identifiers
+; namespaces are also convention
+<songs-list/rating-star.aria-label (cond
+    (eq? (cldr/plural $n) :one) "{ $n } star"
+   :else "{ $n } stars")
+>
+
+; in English
+<space-available
+  ; @param $num Number of units available
+  ; @param $unit Name of the unit
+  "{ $num }{ $unit } available">
+
+; in French; see the byte-unit macro below
+<space-available
+  ; @param $num Number of units available
+  ; @param $unit Name of the unit
+  (cond 
+    (eq? (cldr/plural $num) :one) "{ $num }{ (byte-unit $unit) } disponible"
+    :else "{ $num }{ (byte-unit $unit) } disponibles"
+  )
+>
+
+; custom macros are defined similar to LISP functions
+; the following symbols are supported for now:
+;   entity variant trait defmacro cond
+;   not and or add sub mul div mod max min eq? neq? lt? gt? lte? gte?
+; reserved for future use:
+;   import true false
+<byte-unit (unit) =>
+  (cond
+    (eq? unit "B") "o"
+    (eq? unit "KB") "Ko"
+    (eq? unit "MB") "Mo"
+    (eq? unit "GB") "Go"
+    :else "Oops")>
+
+; macros can return variant names
+; keywords are truthy so we can use :else for pthe last condition in cond (as 
+; a convention)
+<my-plural (x) =>
+  (cond
+    (eq? x 1) :one
+    :else :many)>
+
+; macros can only be called with (name …); they cannot be referenced 
+; nor passed around
+<notification-count (cond
+    (eq? (my-plural $n) :one) "{ $n } notification"
+   :else "{ $n } notifications"}
+   )>
